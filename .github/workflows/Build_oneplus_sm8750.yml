@@ -197,18 +197,14 @@ jobs:
          
       - name: ⚙️ Set SuKiSU Ultra (设置SuKiSU Ultra)
         run: |
-            mkdir -p kernel_workspace/kernel_platform
-              cd kernel_workspace/kernel_platform
-              curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/susfs-main/kernel/setup.sh" | bash -s susfs-main
-              cd KernelSU
-              cp "${GITHUB_WORKSPACE}/.github/workflows/setup.bin" ./
-              chmod +x setup.bin
-              if [ ! -f "kernel/Makefile" ]; then
-                echo "::error ::kernel/Makefile"
-                ls -la
-                exit 1
-              fi
-              ./setup.bin
+            cd kernel_workspace/kernel_platform
+            curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/susfs-main/kernel/setup.sh" | bash -s susfs-main
+            cd ./KernelSU
+            
+            KSU_VERSION=$(expr $(/usr/bin/git rev-list --count main) "+" 10700)
+            echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
+            export KSU_VERSION=$KSU_VERSION
+            sed -i "s/DKSU_VERSION=12800/DKSU_VERSION=${KSU_VERSION}/" kernel/Makefile
       - name: 🔧 Set up SUSFS (配置 SUSFS)
         run: |
            cd kernel_workspace
