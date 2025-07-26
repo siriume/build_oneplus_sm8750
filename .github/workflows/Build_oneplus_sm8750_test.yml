@@ -1,4 +1,4 @@
-name: Build_oneplus_sm8750
+name: Build_oneplus_sm8750_test
 on:
   workflow_dispatch:
     inputs:
@@ -252,11 +252,14 @@ jobs:
       - name: 🔧 应用lz4 1.10.0 & zstd 1.5.7补丁
         run: |
           cd kernel_workspace
-          git clone https://github.com/cctv18/oppo_oplus_realme_sm8650.git
+          mkdir cctv18_patch
+          wget -P cctv18_patch https://raw.githubusercontent.com/cctv18/oppo_oplus_realme_sm8650/refs/heads/main/zram_patch/001-lz4.patch
+          wget -P cctv18_patch https://raw.githubusercontent.com/cctv18/oppo_oplus_realme_sm8650/refs/heads/main/zram_patch/lz4armv8.S
+          wget -P cctv18_patch https://raw.githubusercontent.com/cctv18/oppo_oplus_realme_sm8650/refs/heads/main/zram_patch/002-zstd.patch
 
-          cp ./oppo_oplus_realme_sm8650/zram_patch/001-lz4.patch ./common/
-          cp ./oppo_oplus_realme_sm8650/zram_patch/lz4armv8.S ./common/lib
-          cp ./oppo_oplus_realme_sm8650/zram_patch/002-zstd.patch ./common/
+          cp ./cctv18_patch/001-lz4.patch ./common/
+          cp ./cctv18_patch/lz4armv8.S ./common/lib
+          cp ./cctv18_patch/002-zstd.patch ./common/
 
           # Apply patches
           cd ./common
