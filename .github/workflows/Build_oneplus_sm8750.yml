@@ -32,30 +32,35 @@ on:
         required: false
         default: ''
       
-      enable_feature_x:
+      enable_feature_a:
         description: "生成无KPM的AK3 - 取消则只有有KPM的AK3"
-        required: false
-        default: true
-        type: boolean
-        
-      enable_feature_y:
-        description: "启用lz4kd"
-        required: false
-        default: true
-        type: boolean
-        
-      enable_feature_z:
-        description: "添加风驰驱动"
         required: false
         default: true
         type: boolean
 
       enable_feature_b:
+         description: "启用lz4 1.10升级"
+         required: false
+         default: true
+         type: boolean
+        
+      enable_feature_c:
+        description: "启用lz4kd"
+        required: false
+        default: true
+        type: boolean
+        
+      enable_feature_d:
+        description: "添加风驰驱动"
+        required: false
+        default: true
+        type: boolean
+
+      enable_feature_z:
          description: "添加BBR控制算法"
          required: false
          default: false
          type: boolean
-      
        
 
 
@@ -241,8 +246,17 @@ jobs:
            cp ../../SukiSU_patch/hooks/syscall_hooks.patch ./
            patch -p1 -F 3 < syscall_hooks.patch
 
-           
            echo "完成"
+
+      - name: 🔧 应用lz4 1.10.0
+        if: ${{inputs.enable_feature_b }}
+        run: |
+          cd kernel_workspace/kernel_platform/common
+          wget https://raw.githubusercontent.com/cctv18/oppo_oplus_realme_sm8650/refs/heads/main/zram_patch/001-lz4.patch
+          wget -P ./lib https://raw.githubusercontent.com/cctv18/oppo_oplus_realme_sm8650/refs/heads/main/zram_patch/lz4armv8.S
+
+          # Apply patches
+          git apply -p1 < 001-lz4.patch || true
 
       - name: 🔧 Cache HMBird patch (缓存HMBird补丁)
         uses: actions/cache@v3
@@ -251,8 +265,8 @@ jobs:
           key: hmbird-patch-v1
           restore-keys: |
             hmbird-patch-v1
-            
-      
+
+
       - name: 🔧 Apply HMBird GKI patch (写入单Boot开机补丁)
         run: |
           PATCH_FILE="${{ runner.temp }}/hmbird_patch.c"
@@ -271,7 +285,7 @@ jobs:
 
           
       - name: 🔧 Apply lz4kd Patches (应用LZ4KD补丁)
-        if: ${{inputs.enable_feature_y }}
+        if: ${{inputs.enable_feature_c }}
         run: |
           cd kernel_workspace/kernel_platform/common
             cp ../../SukiSU_patch/other/zram/zram_patch/6.6/lz4kd.patch ./
@@ -279,7 +293,7 @@ jobs:
             
       - name: 🔧 Set gki_defconfig (设置编译配置)
         env:
-          ENABLE_B: ${{ github.event.inputs.enable_feature_b }}       
+          ENABLE_Z: ${{ github.event.inputs.enable_feature_z }}       
         run: |
           cd kernel_workspace/kernel_platform
           echo "CONFIG_KSU=y" >> ./common/arch/arm64/configs/gki_defconfig
@@ -313,7 +327,7 @@ jobs:
           echo "CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_KSU_SUSFS_OPEN_REDIRECT=y" >> ./common/arch/arm64/configs/gki_defconfig
           # Add BBR
-          if [ "$ENABLE_B" = "true" ]; then
+          if [ "$ENABLE_Z" = "true" ]; then
             echo "CONFIG_TCP_CONG_ADVANCED=y" >> ./common/arch/arm64/configs/gki_defconfig
             echo "CONFIG_TCP_CONG_BBR=y" >> ./common/arch/arm64/configs/gki_defconfig
             echo "CONFIG_NET_SCH_FQ=y" >> ./common/arch/arm64/configs/gki_defconfig
@@ -371,7 +385,7 @@ jobs:
           sed -i 's/${scm_version}//' ./common/scripts/setlocalversion
           
       - name: 🔧 Add sched_ext (写入风驰补丁)
-        if: ${{inputs.enable_feature_z }}
+        if: ${{inputs.enable_feature_d }}
         run: |
          cd kernel_workspace/kernel_platform/
          git clone https://github.com/HanKuCha/sched_ext.git
@@ -402,7 +416,7 @@ jobs:
           make -j$(nproc --all) LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC="ccache clang" RUSTC=../../prebuilts/rust/linux-x86/1.73.0b/bin/rustc PAHOLE=../../prebuilts/kernel-build-tools/linux-x86/bin/pahole LD=ld.lld HOSTLD=ld.lld O=out KCFLAGS+=-O2  Image
           
       - name: 📦 Make AnyKernel3 (NoKPM)
-        if: ${{inputs.enable_feature_x }}
+        if: ${{inputs.enable_feature_a }}
         run: |
           git clone https://github.com/Kernel-SU/AnyKernel3.git --depth=1 AnyKernel3_NoKPM
           rm -rf ./AnyKernel3_NoKPM/.git
@@ -411,7 +425,7 @@ jobs:
       
       
       - name: 📤 Upload AnyKernel3 (上传NoKPM_AK3包)
-        if: ${{inputs.enable_feature_x }}
+        if: ${{inputs.enable_feature_a }}
         uses: actions/upload-artifact@v4
         with:
           name: AK3_NoKPM_${{ env.KSUVER }}_${{ env.DEVICES_NAME }}_SuKiSU
