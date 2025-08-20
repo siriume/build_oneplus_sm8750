@@ -28,7 +28,7 @@ info "5.一加 Ace5 至尊版"
 info "6.真我 GT 7 Pro"
 info "7.真我 GT 7 Pro 竞速版"
 
-read -p "输入选择 [1-4]: " device_choice
+read -p "输入选择 [1-7]: " device_choice
 
 case $device_choice in
     1)
@@ -102,6 +102,7 @@ read -p "输入内核构建日期更改(回车默认为原厂): " input_time
 [ -n "$input_time" ] && KERNEL_TIME="$input_time"
 
 ENABLE_KPM=$(prompt_boolean "是否启用KPM？(回车默认开启) [y/N]: " true)
+ENABLE_LZ4_1_10=$(prompt_boolean "是否启用LZ41.10升级？(回车默认开启) [y/N]: " true)
 ENABLE_LZ4KD=$(prompt_boolean "是否启用LZ4KD？(回车默认开启) [y/N]: " true)
 ENABLE_BBR=$(prompt_boolean "是否启用BBR？(回车默认关闭) [y/N]: " false)
 
@@ -111,6 +112,7 @@ info "内核源码文件: $REPO_MANIFEST"
 info "内核名称: $KERNEL_SUFFIX"
 info "内核时间: $KERNEL_TIME"
 info "是否开启KPM: $ENABLE_KPM"
+info "是否开启LZ41.10升级: $ENABLE_LZ4_1_10"
 info "是否开启LZ4KD: $ENABLE_LZ4KD"
 info "是否开启BBR: $ENABLE_BBR"
 
@@ -197,7 +199,7 @@ cd "$KERNEL_WORKSPACE" || error "无法进入kernel_workspace目录"
 
 # 初始化源码
 info "初始化repo并同步源码..."
-repo init -u https://github.com/showdo/kernel_manifest.git -b refs/heads/oneplus/sm8750 -m "$REPO_MANIFEST" --depth=1 || error "repo初始化失败"
+repo init -u https://github.com/siriume/kernel_manifest.git -b refs/heads/oneplus/sm8750 -m "$REPO_MANIFEST" --depth=1 || error "repo初始化失败"
 repo --trace sync -c -j$(nproc --all) --no-tags || error "repo同步失败"
 
 # ==================== 核心构建步骤 ====================
@@ -266,7 +268,7 @@ apply_hmbird_patch() {
     cd drivers || error "进入drivers目录失败"
     
     # 设置补丁URL（移除local关键字）
-    patch_url="https://raw.githubusercontent.com/showdo/build_oneplus_sm8750/main/hmbird_patch.c"
+    patch_url="https://raw.githubusercontent.com/siriume/build_oneplus_sm8750/main/hmbird_patch.c"
     
     info "从GitHub下载补丁文件..."
     if ! curl -sSLo hmbird_patch.c "$patch_url"; then
@@ -386,7 +388,7 @@ mv oImage Image || error "替换Image失败"
 # 创建AnyKernel3包
 info "创建AnyKernel3包..."
 cd "$WORKSPACE" || error "返回工作目录失败"
-git clone -q https://github.com/showdo/AnyKernel3.git --depth=1 || info "AnyKernel3已存在"
+git clone -q https://github.com/siriume/AnyKernel3.git --depth=1 || info "AnyKernel3已存在"
 rm -rf ./AnyKernel3/.git
 rm -f ./AnyKernel3/push.sh
 cp "$KERNEL_WORKSPACE/kernel_platform/common/out/arch/arm64/boot/Image" ./AnyKernel3/ || error "复制Image失败"
